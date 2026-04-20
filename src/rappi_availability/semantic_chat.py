@@ -26,6 +26,8 @@ def _format_timestamp(value: object) -> str:
 
 def classify_intent(question: str) -> str:
     text = _normalize(question)
+    if any(word in text for word in ["dia", "diario", "fecha"]):
+        return "daily"
     if any(word in text for word in ["minimo", "menor", "peor", "caida"]):
         return "minimum"
     if any(word in text for word in ["maximo", "mayor", "mejor", "pico", "alto"]):
@@ -36,8 +38,6 @@ def classify_intent(question: str) -> str:
         return "trend"
     if any(word in text for word in ["anomalia", "evento", "cambio", "salto", "variacion"]):
         return "events"
-    if any(word in text for word in ["dia", "diario", "fecha"]):
-        return "daily"
     return "unknown"
 
 

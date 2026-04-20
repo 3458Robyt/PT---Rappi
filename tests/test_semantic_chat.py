@@ -43,3 +43,10 @@ def test_unknown_question_returns_capabilities():
     answer = answer_question("Explícame el color del logo", sample_frame())
 
     assert "Puedo responder" in answer
+
+
+def test_daily_question_takes_precedence_over_generic_best_word():
+    answer = answer_question("¿Qué día tuvo mejor mediana?", sample_frame())
+
+    assert "mejor día" in answer
+    assert "2026-02-02" in answer
