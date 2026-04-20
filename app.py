@@ -267,13 +267,12 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-prompt = st.chat_input("Pregunta sobre la disponibilidad")
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
+with st.form("availability_question", clear_on_submit=True):
+    prompt = st.text_input("Pregunta sobre la disponibilidad", placeholder="Ej: ¿Qué día tuvo mejor mediana?")
+    submitted = st.form_submit_button("Preguntar")
 
+if submitted and prompt.strip():
+    st.session_state.messages.append({"role": "user", "content": prompt})
     response = answer_question(prompt, filtered, use_llm=show_llm_polish)
     st.session_state.messages.append({"role": "assistant", "content": response})
-    with st.chat_message("assistant"):
-        st.write(response)
+    st.rerun()
