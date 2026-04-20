@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .streamlit/
+output/
 Archivo (1)/
 Prueba AI Interns 2026 (2) (2).docx
 .worktrees/
