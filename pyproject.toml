@@ -1,0 +1,11 @@
+[project]
+name = "rappi-availability-dashboard"
+version = "0.1.0"
+description = "Local dashboard and semantic chatbot for the Rappi AI Interns 2026 technical test."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+

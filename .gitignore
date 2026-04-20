@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.streamlit/
+Archivo (1)/
+Prueba AI Interns 2026 (2) (2).docx
+.worktrees/

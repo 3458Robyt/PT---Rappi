@@ -1,0 +1,2 @@
+"""Rappi availability dashboard package."""
+
