@@ -77,6 +77,32 @@ def compute_kpis(frame: pd.DataFrame) -> dict[str, object]:
     }
 
 
+def summarize_range_change(
+    first_value: float,
+    last_value: float,
+    reference_value: float,
+    minimum_baseline_ratio: float = 0.10,
+) -> dict[str, object]:
+    change = float(last_value - first_value)
+    minimum_representative_baseline = abs(float(reference_value)) * minimum_baseline_ratio
+    baseline_is_representative = abs(float(first_value)) >= max(1.0, minimum_representative_baseline)
+
+    if not baseline_is_representative:
+        return {
+            "mode": "absolute",
+            "change": change,
+            "percent": None,
+            "baseline_is_representative": False,
+        }
+
+    return {
+        "mode": "percent",
+        "change": change,
+        "percent": change / float(first_value) * 100,
+        "baseline_is_representative": True,
+    }
+
+
 def daily_summary(frame: pd.DataFrame) -> pd.DataFrame:
     result = _sorted(frame)
     if result.empty:

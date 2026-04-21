@@ -1,6 +1,12 @@
 import pandas as pd
 
-from rappi_availability.metrics import compute_kpis, daily_summary, detect_events, resample_series
+from rappi_availability.metrics import (
+    compute_kpis,
+    daily_summary,
+    detect_events,
+    resample_series,
+    summarize_range_change,
+)
 
 
 def sample_frame():
@@ -51,3 +57,29 @@ def test_detect_events_sorts_largest_absolute_changes_first():
     assert len(events) == 2
     assert events.iloc[0]["abs_change"] == 100.0
     assert events.iloc[0]["direction"] == "increase"
+
+
+def test_summarize_range_change_uses_absolute_delta_when_initial_baseline_is_tiny():
+    summary = summarize_range_change(
+        first_value=37.0,
+        last_value=5_630_566.0,
+        reference_value=3_542_000.0,
+    )
+
+    assert summary["mode"] == "absolute"
+    assert summary["baseline_is_representative"] is False
+    assert summary["change"] == 5_630_529.0
+    assert summary["percent"] is None
+
+
+def test_summarize_range_change_uses_percent_when_initial_baseline_is_representative():
+    summary = summarize_range_change(
+        first_value=3_000_000.0,
+        last_value=3_600_000.0,
+        reference_value=3_200_000.0,
+    )
+
+    assert summary["mode"] == "percent"
+    assert summary["baseline_is_representative"] is True
+    assert summary["change"] == 600_000.0
+    assert summary["percent"] == 20.0

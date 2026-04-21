@@ -18,6 +18,7 @@ from rappi_availability.metrics import (
     detect_events,
     filter_by_time,
     resample_series,
+    summarize_range_change,
 )
 from rappi_availability.semantic_chat import answer_question
 
@@ -656,8 +657,14 @@ daily = daily_summary(filtered)
 
 first_value = float(filtered.iloc[0]["visible_stores"])
 last_value = float(filtered.iloc[-1]["visible_stores"])
-net_change = last_value - first_value
-net_change_pct = (net_change / first_value * 100) if first_value else 0.0
+range_change = summarize_range_change(first_value, last_value, float(kpis["median_value"]))
+if range_change["mode"] == "percent":
+    range_change_detail = f"<strong>{format_pct(float(range_change['percent']))}</strong> vs inicio del rango"
+else:
+    range_change_detail = (
+        f"<strong>Δ {format_compact(range_change['change'])}</strong> vs inicio; "
+        f"base inicial {format_compact(first_value)}"
+    )
 best_day = daily.sort_values("median_visible_stores", ascending=False).iloc[0]
 worst_day = daily.sort_values("median_visible_stores", ascending=True).iloc[0]
 
@@ -667,7 +674,7 @@ st.markdown(
     f"""
     <div class="metric-grid">
         {render_metric("Puntos historicos", format_number(kpis["points"]), "timestamps despues de filtros")}
-        {render_metric("Ultimo valor", format_compact(kpis["current_value"]), f"<strong>{format_pct(net_change_pct)}</strong> vs inicio del rango")}
+        {render_metric("Ultimo valor", format_compact(kpis["current_value"]), range_change_detail)}
         {render_metric("Mediana visible", format_compact(kpis["median_value"]), f"base para umbral bajo: {format_compact(threshold)}", COLOR_BLUE)}
         {render_metric("Punto minimo", format_compact(kpis["minimum_value"]), f"{pd.Timestamp(kpis['minimum_timestamp']).strftime('%Y-%m-%d %H:%M:%S')}", COLOR_RED)}
         {render_metric("Punto maximo", format_compact(kpis["maximum_value"]), f"{pd.Timestamp(kpis['maximum_timestamp']).strftime('%Y-%m-%d %H:%M:%S')}", COLOR_AMBER)}
