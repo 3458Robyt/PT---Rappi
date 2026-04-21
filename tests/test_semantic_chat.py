@@ -1,5 +1,8 @@
+import json
+
 import pandas as pd
 
+from rappi_availability import semantic_chat
 from rappi_availability.semantic_chat import answer_question, classify_intent
 
 
@@ -50,3 +53,87 @@ def test_daily_question_takes_precedence_over_generic_best_word():
 
     assert "mejor día" in answer
     assert "2026-02-02" in answer
+
+
+def test_answer_uses_gemini_to_polish_when_enabled(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "Respuesta pulida por Gemini."}]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["headers"] = dict(request.header_items())
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        captured["timeout"] = timeout
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(semantic_chat, "urlopen", fake_urlopen, raising=False)
+
+    answer = semantic_chat.answer_question("¿Cuál fue el mínimo?", sample_frame(), use_llm=True)
+
+    assert answer == "Respuesta pulida por Gemini."
+    assert "gemini-flash-latest:generateContent" in captured["url"]
+    assert captured["headers"]["X-goog-api-key"] == "test-key"
+    assert "Respuesta base verificada" in captured["body"]["contents"][0]["parts"][0]["text"]
+    assert captured["timeout"] == 20
+
+
+def test_answer_accepts_explicit_gemini_key_without_environment(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "Pulido con clave temporal."}]
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        captured["headers"] = dict(request.header_items())
+        return FakeResponse()
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.setattr(semantic_chat, "urlopen", fake_urlopen, raising=False)
+
+    answer = semantic_chat.answer_question(
+        "¿Cuál fue el mínimo?",
+        sample_frame(),
+        use_llm=True,
+        gemini_api_key="temporary-key",
+    )
+
+    assert answer == "Pulido con clave temporal."
+    assert captured["headers"]["X-goog-api-key"] == "temporary-key"

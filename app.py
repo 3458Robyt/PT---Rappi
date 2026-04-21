@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -617,7 +618,19 @@ with st.sidebar:
     threshold_pct = st.slider("Umbral bajo vs mediana", min_value=30, max_value=95, value=70, step=5)
     event_limit = st.slider("Eventos fuertes", min_value=5, max_value=30, value=15, step=1)
     table_rows = st.slider("Filas en tablas", min_value=10, max_value=100, value=30, step=10)
-    show_llm_polish = st.toggle("Pulir respuestas con OpenAI", value=False)
+    configured_gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if configured_gemini_key:
+        st.caption("Gemini listo por variable de entorno.")
+        gemini_api_key = configured_gemini_key
+    else:
+        gemini_api_key = st.text_input(
+            "Gemini API key",
+            type="password",
+            help="Clave temporal para esta sesion. No se guarda en archivos.",
+        ).strip()
+    show_llm_polish = st.toggle("Pulir respuestas con Gemini", value=bool(gemini_api_key))
+    if show_llm_polish and not gemini_api_key:
+        st.warning("Agrega una Gemini API key o configura GEMINI_API_KEY para activar el pulido IA.")
     st.divider()
     st.download_button(
         "Descargar dataset completo",
@@ -800,6 +813,11 @@ with tab_chat:
 
     if submitted and prompt.strip():
         st.session_state.messages.append({"role": "user", "content": prompt})
-        response = answer_question(prompt, filtered, use_llm=show_llm_polish)
+        response = answer_question(
+            prompt,
+            filtered,
+            use_llm=show_llm_polish,
+            gemini_api_key=gemini_api_key,
+        )
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import unicodedata
+import json
+from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -41,7 +43,12 @@ def classify_intent(question: str) -> str:
     return "unknown"
 
 
-def answer_question(question: str, frame: pd.DataFrame, use_llm: bool = False) -> str:
+def answer_question(
+    question: str,
+    frame: pd.DataFrame,
+    use_llm: bool = False,
+    gemini_api_key: str | None = None,
+) -> str:
     if frame.empty:
         return "No hay datos en el filtro actual. Amplía el rango de fechas para poder analizar disponibilidad."
 
@@ -108,34 +115,72 @@ def answer_question(question: str, frame: pd.DataFrame, use_llm: bool = False) -
             "eventos fuertes y resumen diario de la disponibilidad visible."
         )
 
-    return _polish_with_openai(question, answer, use_llm=use_llm)
+    return _polish_with_gemini(question, answer, use_llm=use_llm, api_key=gemini_api_key)
 
 
-def _polish_with_openai(question: str, answer: str, use_llm: bool) -> str:
-    if not use_llm or not os.getenv("OPENAI_API_KEY"):
+def _gemini_api_key(api_key: str | None = None) -> str | None:
+    if api_key:
+        return api_key
+    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
+
+def _build_gemini_prompt(question: str, answer: str) -> str:
+    return (
+        "Responde en español, de forma breve, ejecutiva y clara. "
+        "Usa solamente la respuesta base verificada; no agregues cifras, fechas ni supuestos nuevos.\n\n"
+        f"Pregunta del usuario: {question}\n"
+        f"Respuesta base verificada: {answer}"
+    )
+
+
+def _extract_gemini_text(payload: dict) -> str:
+    candidates = payload.get("candidates") or []
+    if not candidates:
+        return ""
+    parts = candidates[0].get("content", {}).get("parts") or []
+    texts = [str(part.get("text", "")).strip() for part in parts if part.get("text")]
+    return " ".join(texts).strip()
+
+
+def _polish_with_gemini(
+    question: str,
+    answer: str,
+    use_llm: bool,
+    api_key: str | None = None,
+) -> str:
+    api_key = _gemini_api_key(api_key)
+    if not use_llm or not api_key:
         return answer
 
     try:
-        from openai import OpenAI
-
-        client = OpenAI()
-        response = client.responses.create(
-            model="gpt-4.1-mini",
-            input=[
+        body = {
+            "contents": [
                 {
-                    "role": "system",
-                    "content": (
-                        "Responde en español, de forma breve, solo con los datos provistos. "
-                        "No agregues cifras nuevas."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": f"Pregunta: {question}\nRespuesta base verificada: {answer}",
-                },
+                    "parts": [
+                        {
+                            "text": _build_gemini_prompt(question, answer),
+                        }
+                    ]
+                }
             ],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 180,
+            },
+        }
+        request = Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "X-goog-api-key": api_key,
+            },
+            method="POST",
         )
-        polished = response.output_text.strip()
+        with urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        polished = _extract_gemini_text(payload)
         return polished or answer
     except Exception:
         return answer

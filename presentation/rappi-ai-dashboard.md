@@ -22,7 +22,7 @@ El chatbot clasifica preguntas en intents: minimo, maximo, resumen, tendencia, d
 
 ## Slide 6 - Uso de AI
 
-Use Codex/GPT como agente de desarrollo: analisis del brief, inspeccion del dataset, plan, pruebas, implementacion y material de presentacion. OpenAI puede pulir respuestas, pero no es necesario para que el sistema funcione.
+Use Codex/GPT como agente de desarrollo: analisis del brief, inspeccion del dataset, plan, pruebas, implementacion y material de presentacion. Gemini puede pulir respuestas, pero no es necesario para que el sistema funcione.
 
 ## Slide 7 - Tradeoffs
 
@@ -37,4 +37,3 @@ Elegí Streamlit para maximizar funcionalidad local en 1.5 horas. La decision cl
 5. Preguntar: "¿Cuál fue el peor momento?"
 6. Preguntar: "¿Qué día tuvo mejor mediana?"
 7. Cerrar con tests y estructura de codigo.
-

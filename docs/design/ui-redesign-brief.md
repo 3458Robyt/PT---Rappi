@@ -14,7 +14,7 @@ Dark command-center interface with high-contrast data, Rappi green as the primar
 
 ## Required Information Architecture
 
-- Persistent sidebar filters for date range, hour range, time aggregation, low-availability threshold, event count, table row count, and optional OpenAI polishing.
+- Persistent sidebar filters for date range, hour range, time aggregation, low-availability threshold, event count, table row count, and optional Gemini polishing.
 - Top status header that explains range, aggregation, deduplicated points, and overlap count.
 - KPI strip with current value, median, minimum, maximum, and point count.
 - Historical time-series chart with moving median, low threshold, and event markers.
@@ -35,4 +35,3 @@ Dark command-center interface with high-contrast data, Rappi green as the primar
 - Keep controls at least 44px tall where possible.
 - Avoid blank or decorative sections.
 - Provide CSV export for auditability.
-

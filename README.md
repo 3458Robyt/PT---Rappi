@@ -10,7 +10,7 @@ Aplicacion local para la prueba tecnica AI Interns 2026 de Rappi. Convierte los 
 - Grafico historico con mediana movil, umbral bajo y marcadores de eventos.
 - Resumen diario, mapa por dia/hora, distribucion, tabla de cambios fuertes, tabla de baja disponibilidad y muestra de datos historicos.
 - Chatbot en espanol para minimos, maximos, tendencia, resumen diario y eventos.
-- Pulido opcional de respuestas con OpenAI cuando existe `OPENAI_API_KEY`.
+- Pulido opcional de respuestas con Gemini cuando existe `GEMINI_API_KEY`, `GOOGLE_API_KEY` o una clave temporal en el sidebar.
 
 ## Datos
 
@@ -34,6 +34,17 @@ La app queda disponible normalmente en:
 http://127.0.0.1:8501
 ```
 
+## Activar Gemini
+
+La app no guarda claves en el codigo. Para activar el pulido de respuestas con Gemini, usa una de estas opciones:
+
+```powershell
+$env:GEMINI_API_KEY="tu_clave"
+.\.venv\Scripts\streamlit run app.py
+```
+
+Tambien puedes pegar la clave temporalmente en el campo `Gemini API key` del sidebar durante la demo.
+
 ## Verificacion
 
 ```powershell
@@ -54,7 +65,7 @@ Dame la tendencia general.
 
 - Codex/GPT se uso para leer el brief, inspeccionar el formato real de los CSV, crear el plan de desarrollo y construir la solucion con TDD.
 - El chatbot usa reglas semanticas deterministicas para que la demo funcione sin secretos y se mantenga grounded en los datos filtrados.
-- OpenAI queda como capa opcional de redaccion: si se activa, solo pule una respuesta numerica ya calculada localmente.
+- Gemini queda como capa opcional de redaccion: si se activa, solo pule una respuesta numerica ya calculada localmente.
 
 ## Estructura
 
