@@ -7,7 +7,8 @@ Aplicacion local para la prueba tecnica AI Interns 2026 de Rappi. Convierte los 
 - Dashboard de serie temporal para `synthetic_monitoring_visible_stores`.
 - Filtros por fecha, agregacion visual y cantidad de eventos.
 - KPIs de puntos, ultimo valor, mediana, minimo y maximo.
-- Grafico de disponibilidad, resumen diario y tabla de cambios mas fuertes.
+- Grafico historico con mediana movil, umbral bajo y marcadores de eventos.
+- Resumen diario, mapa por dia/hora, distribucion, tabla de cambios fuertes, tabla de baja disponibilidad y muestra de datos historicos.
 - Chatbot en espanol para minimos, maximos, tendencia, resumen diario y eventos.
 - Pulido opcional de respuestas con OpenAI cuando existe `OPENAI_API_KEY`.
 
@@ -66,4 +67,3 @@ src/rappi_availability/semantic_chat.py
 tests/
 presentation/rappi-ai-dashboard.md
 ```
-
