@@ -1,0 +1,14 @@
+{
+  "framework": "other",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/app.py"
+    }
+  ],
+  "functions": {
+    "app.py": {
+      "runtime": "python3.11"
+    }
+  }
+}
