@@ -1,15 +1,15 @@
-# Rappi Availability AI Dashboard
+# Rappi Availability Risk Tower
 
-Aplicacion local para la prueba tecnica AI Interns 2026 de Rappi. Convierte los CSV exportados de disponibilidad en un dashboard operativo y un chatbot semantico que responde sobre el mismo rango filtrado en pantalla.
+Aplicacion local para la prueba tecnica AI Interns 2026 de Rappi. Convierte los CSV exportados de disponibilidad en una torre de control de riesgo operativo con SLI, error budget, incidentes, recuperacion y chatbot semantico sobre el mismo rango filtrado.
 
 ## Que construye
 
-- Dashboard de serie temporal para `synthetic_monitoring_visible_stores`.
-- Filtros por fecha, agregacion visual y cantidad de eventos.
-- KPIs de puntos, ultimo valor, mediana, minimo y maximo.
-- Grafico historico con mediana movil, umbral bajo y marcadores de eventos.
-- Resumen diario, mapa por dia/hora, distribucion, tabla de cambios fuertes, tabla de baja disponibilidad y muestra de datos historicos.
-- Chatbot en espanol para minimos, maximos, tendencia, resumen diario y eventos.
+- Experiencia Dash tipo Control Tower para `synthetic_monitoring_visible_stores`.
+- Filtros por fecha, hora, granularidad visual, umbral saludable y objetivo SLO.
+- KPIs de riesgo: SLI operativo, error budget, burn rate, minutos bajo umbral, incidentes, MTTR, MTBF, dispersion P10/P90 y velocidad de recuperacion.
+- Runway temporal con franjas de incidentes, umbral saludable y mediana movil.
+- Gauge de error budget, ranking de incidentes, mapa dia/hora, distribucion P10/P50/P90, tablas auditables y export CSV.
+- Chatbot en espanol para minimos, maximos, tendencia, SLO, presupuesto, riesgo, incidentes y recuperacion.
 - Pulido opcional de respuestas con Gemini cuando existe `GEMINI_API_KEY`, `GOOGLE_API_KEY` o una clave temporal en el sidebar.
 
 ## Datos
@@ -25,13 +25,13 @@ python -m venv .venv
 .\.venv\Scripts\python -m pip install --upgrade pip
 .\.venv\Scripts\python -m pip install -r requirements.txt
 .\.venv\Scripts\python scripts/build_dataset.py --input "Archivo (1)" --output data/processed/availability_long.csv
-.\.venv\Scripts\streamlit run app.py
+.\.venv\Scripts\python app.py
 ```
 
 La app queda disponible normalmente en:
 
 ```txt
-http://127.0.0.1:8501
+http://127.0.0.1:8050
 ```
 
 ## Activar Gemini
@@ -40,7 +40,7 @@ La app no guarda claves en el codigo. Para activar el pulido de respuestas con G
 
 ```powershell
 $env:GEMINI_API_KEY="tu_clave"
-.\.venv\Scripts\streamlit run app.py
+.\.venv\Scripts\python app.py
 ```
 
 Tambien puedes pegar la clave temporalmente en el campo `Gemini API key` del sidebar durante la demo.
@@ -64,7 +64,7 @@ Dame la tendencia general.
 ## Uso de AI
 
 - Codex/GPT se uso para leer el brief, inspeccionar el formato real de los CSV, crear el plan de desarrollo y construir la solucion con TDD.
-- El chatbot usa reglas semanticas deterministicas para que la demo funcione sin secretos y se mantenga grounded en los datos filtrados.
+- El chatbot usa reglas semanticas deterministicas y metricas calculadas localmente para que la demo funcione sin secretos y se mantenga grounded en los datos filtrados.
 - Gemini queda como capa opcional de redaccion: si se activa, solo pule una respuesta numerica ya calculada localmente.
 
 ## Estructura
@@ -74,7 +74,9 @@ app.py
 scripts/build_dataset.py
 src/rappi_availability/load_data.py
 src/rappi_availability/metrics.py
+src/rappi_availability/risk_model.py
 src/rappi_availability/semantic_chat.py
+assets/risk_tower.css
 tests/
 presentation/rappi-ai-dashboard.md
 ```

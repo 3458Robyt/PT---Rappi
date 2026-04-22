@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 import pandas as pd
 
 from rappi_availability.metrics import compute_kpis, daily_summary, detect_events
+from rappi_availability.risk_model import compute_risk_model
 
 
 def _normalize(text: str) -> str:
@@ -28,6 +29,8 @@ def _format_timestamp(value: object) -> str:
 
 def classify_intent(question: str) -> str:
     text = _normalize(question)
+    if any(word in text for word in ["slo", "riesgo", "budget", "presupuesto", "mttr", "mtbf", "incidente", "recuperacion"]):
+        return "risk"
     if any(word in text for word in ["dia", "diario", "fecha"]):
         return "daily"
     if any(word in text for word in ["minimo", "menor", "peor", "caida"]):
@@ -109,13 +112,68 @@ def answer_question(
             f"El día más débil fue {worst['date']} con "
             f"{_format_number(worst['median_visible_stores'])}."
         )
+    elif intent == "risk":
+        answer = _build_risk_answer(frame)
     else:
         answer = (
             "Puedo responder sobre mínimos, máximos, promedios, tendencias, "
-            "eventos fuertes y resumen diario de la disponibilidad visible."
+            "eventos fuertes, SLO, error budget, incidentes y resumen diario de la disponibilidad visible."
         )
 
     return _polish_with_gemini(question, answer, use_llm=use_llm, api_key=gemini_api_key)
+
+
+def _build_risk_answer(frame: pd.DataFrame) -> str:
+    risk = compute_risk_model(frame)
+    summary = risk["summary"]
+    return (
+        f"SLI operativo: {summary['operational_sli_pct']:.1f}% frente a un objetivo "
+        f"SLO de {summary['slo_target_pct']:.1f}%. "
+        f"El error budget restante es {summary['error_budget_remaining_pct']:.1f}% "
+        f"con burn rate {summary['budget_burn_rate']:.2f}x. "
+        f"Se detectaron {summary['incident_count']} incidente(s), "
+        f"{summary['low_minutes']} minutos bajo umbral y MTTR de "
+        f"{summary['mttr_minutes']:.1f} minutos."
+    )
+
+
+def build_ai_briefing(
+    frame: pd.DataFrame,
+    use_llm: bool = False,
+    gemini_api_key: str | None = None,
+) -> str:
+    if frame.empty:
+        return "No hay datos en el rango seleccionado para generar un briefing operativo."
+
+    risk = compute_risk_model(frame)
+    summary = risk["summary"]
+    worst_start = summary["worst_incident_start"]
+    if worst_start is None:
+        worst_text = "no se detectaron incidentes bajo el umbral saludable"
+    else:
+        worst_text = (
+            f"la peor ventana inició en {_format_timestamp(worst_start)} y duró "
+            f"{summary['worst_incident_duration_minutes']} minutos"
+        )
+
+    answer = (
+        f"SLI operativo de {summary['operational_sli_pct']:.1f}% con "
+        f"{summary['low_minutes']} minutos bajo el umbral saludable de "
+        f"{_format_number(summary['threshold_value'])} visible stores. "
+        f"Estado: {summary['status']}; error budget restante "
+        f"{summary['error_budget_remaining_pct']:.1f}%; burn rate "
+        f"{summary['budget_burn_rate']:.2f}x. "
+        f"Hubo {summary['incident_count']} incidente(s), MTTR "
+        f"{summary['mttr_minutes']:.1f} minutos y MTBF "
+        f"{summary['mtbf_minutes']:.1f} minutos. "
+        f"Detalle clave: {worst_text}."
+    )
+    return _polish_with_gemini(
+        "Resume el riesgo operativo del rango seleccionado.",
+        answer,
+        use_llm=use_llm,
+        api_key=gemini_api_key,
+    )
 
 
 def _gemini_api_key(api_key: str | None = None) -> str | None:

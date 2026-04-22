@@ -3,7 +3,7 @@ import json
 import pandas as pd
 
 from rappi_availability import semantic_chat
-from rappi_availability.semantic_chat import answer_question, classify_intent
+from rappi_availability.semantic_chat import answer_question, build_ai_briefing, classify_intent
 
 
 def sample_frame():
@@ -53,6 +53,26 @@ def test_daily_question_takes_precedence_over_generic_best_word():
 
     assert "mejor día" in answer
     assert "2026-02-02" in answer
+
+
+def test_classify_intent_understands_slo_and_risk_question():
+    assert classify_intent("¿Cómo está el SLO y el error budget?") == "risk"
+
+
+def test_answer_risk_question_mentions_sli_budget_and_incidents():
+    answer = answer_question("¿Cómo está el riesgo operativo?", sample_frame())
+
+    assert "SLI operativo" in answer
+    assert "error budget" in answer
+    assert "incidente" in answer
+
+
+def test_build_ai_briefing_works_without_gemini_key():
+    briefing = build_ai_briefing(sample_frame(), use_llm=False)
+
+    assert "SLI operativo" in briefing
+    assert "MTTR" in briefing
+    assert "umbral saludable" in briefing
 
 
 def test_answer_uses_gemini_to_polish_when_enabled(monkeypatch):

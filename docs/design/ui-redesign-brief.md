@@ -1,4 +1,4 @@
-# UI Redesign Brief
+# Risk Tower UI Redesign Brief
 
 ## Skill Direction
 
@@ -6,24 +6,22 @@ Use `ui-ux-pro-max` for a full dashboard redesign, not a cosmetic pass.
 
 ## Product Type
 
-Operations analytics dashboard for historical store availability.
+Operations risk tower for historical store availability.
 
 ## Visual Thesis
 
-Dark command-center interface with high-contrast data, Rappi green as the primary signal color, amber for thresholds, red for drops, and cyan for secondary analytical layers.
+Control Tower interface with high-contrast risk signals, Rappi green for healthy operation, amber for budget pressure, red for incidents, cyan/purple for secondary analytical layers.
 
 ## Required Information Architecture
 
-- Persistent sidebar filters for date range, hour range, time aggregation, low-availability threshold, event count, table row count, and optional Gemini polishing.
-- Top status header that explains range, aggregation, deduplicated points, and overlap count.
-- KPI strip with current value, median, minimum, maximum, and point count.
-- Historical time-series chart with moving median, low threshold, and event markers.
-- Daily chart comparing median, minimum, and maximum.
+- Persistent mission-control rail for date range, hour range, time aggregation, healthy threshold, SLO target, and optional Gemini polishing.
+- Top status header that explains range, derived SLI status, healthy threshold, and SLO target.
+- KPI strip with Operational SLI, error budget, burn rate, low minutes, incident count, MTTR, MTBF, P10/P90 spread, and recovery velocity.
+- Runway time-series chart with moving median, healthy threshold, and incident bands.
+- Error budget gauge and incident ranking.
 - Hourly heatmap by day and hour.
-- Distribution chart with the low threshold marked.
-- Event table ranked by absolute change.
-- Daily summary table.
-- Low-availability table.
+- Distribution chart with P10/P50/P90 and threshold markers.
+- Incident log table.
 - Raw filtered data sample.
 - Semantic chatbot that answers only about the active filter context.
 

@@ -1,8 +1,8 @@
-# Rappi AI-Powered Dashboard Presentation
+# Rappi Availability Risk Tower Presentation
 
 ## Slide 1 - Problema
 
-La disponibilidad de tiendas afecta experiencia de usuario y operacion. El objetivo fue convertir un export historico en una superficie local para monitorear, explicar y preguntar.
+La disponibilidad de tiendas afecta experiencia de usuario y operacion. El objetivo fue convertir un export historico en una torre de control que explique riesgo operativo, incidentes y recuperacion.
 
 ## Slide 2 - Entendimiento de datos
 
@@ -12,28 +12,29 @@ El dataset no es un log por tienda; es una serie temporal agregada. Hay 201 CSV,
 
 Normalice el formato wide a una tabla long con `timestamp`, `visible_stores`, `metric`, `observations` y `source_files`. Tambien deduplique timestamps repetidos por ventanas de exportacion solapadas.
 
-## Slide 4 - Dashboard
+## Slide 4 - Risk Tower
 
-El dashboard prioriza lectura operativa: KPIs, serie temporal, resumen diario, eventos fuertes y filtros. La app muestra outliers y ceros porque son parte de la calidad real del dato.
+La interfaz cambia de dashboard tradicional a Control Tower: SLI operativo, error budget, burn rate, MTTR, MTBF, runway temporal con franjas de incidentes y tablas auditables.
 
-## Slide 5 - Chatbot semantico
+## Slide 5 - Chatbot semantico y Gemini
 
-El chatbot clasifica preguntas en intents: minimo, maximo, resumen, tendencia, diario y eventos. Las respuestas salen de funciones analiticas locales sobre el rango filtrado, asi que el chat y los graficos siempre hablan del mismo subconjunto.
+El chatbot clasifica preguntas sobre minimos, maximos, resumen, tendencia, diario, eventos, SLO, error budget, incidentes y recuperacion. Las respuestas salen de funciones analiticas locales sobre el rango filtrado; Gemini solo pule la redaccion si se activa.
 
 ## Slide 6 - Uso de AI
 
-Use Codex/GPT como agente de desarrollo: analisis del brief, inspeccion del dataset, plan, pruebas, implementacion y material de presentacion. Gemini puede pulir respuestas, pero no es necesario para que el sistema funcione.
+Use Codex/GPT como agente de desarrollo: analisis del brief, inspeccion del dataset, plan, pruebas, rediseño completo y material de presentacion. Gemini puede pulir respuestas y briefing, pero no es necesario para que el sistema funcione.
 
 ## Slide 7 - Tradeoffs
 
-Elegí Streamlit para maximizar funcionalidad local en 1.5 horas. La decision clave fue no inventar datos por tienda: la solucion explica la metrica agregada que realmente existe y mantiene trazabilidad desde el CSV al dashboard.
+Elegí Dash para romper la apariencia generica de Streamlit sin inflar el stack: Python, Pandas y Plotly siguen siendo el nucleo. La decision clave fue no inventar datos por tienda: el SLO es un objetivo operativo derivado de tiendas visibles, no un SLA real de Rappi.
 
 ## Slide 8 - Demo flow
 
-1. Abrir app local.
-2. Mostrar rango, deduplicacion y KPIs.
-3. Cambiar agregacion visual.
-4. Revisar cambios mas fuertes.
-5. Preguntar: "¿Cuál fue el peor momento?"
-6. Preguntar: "¿Qué día tuvo mejor mediana?"
-7. Cerrar con tests y estructura de codigo.
+1. Abrir app local en `http://127.0.0.1:8050`.
+2. Mostrar el SLI operativo y el error budget.
+3. Explicar el umbral saludable y el objetivo SLO.
+4. Revisar el runway temporal con franjas de incidentes.
+5. Entrar al ranking de incidentes y el heatmap dia-hora.
+6. Preguntar: "¿Cuál fue el peor incidente?"
+7. Preguntar: "¿Cómo está el error budget?"
+8. Cerrar con tests y estructura de codigo.
