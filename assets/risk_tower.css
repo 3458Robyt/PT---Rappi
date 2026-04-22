@@ -495,6 +495,35 @@ button:focus {
   text-transform: none;
 }
 
+.gemini-status {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: #09130f;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.gemini-status-active {
+  border-color: rgba(21, 214, 123, 0.58);
+  color: var(--green);
+}
+
+.gemini-status-inactive {
+  border-color: rgba(245, 184, 75, 0.42);
+  color: var(--amber);
+}
+
+.gemini-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .primary-button {
   width: 100%;
   min-height: 46px;

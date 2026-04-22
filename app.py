@@ -611,18 +611,18 @@ def create_app() -> Dash:
                             html.Div(
                                 [
                                     html.Label("Gemini"),
-                                    dcc.Input(
-                                        id="gemini-key",
-                                        type="password",
-                                        placeholder="API key temporal",
-                                        className="text-input",
-                                        value=configured_gemini_key or "",
+                                    html.Div(
+                                        "Activo por .env" if configured_gemini_key else "Sin clave local",
+                                        id="gemini-status",
+                                        className=(
+                                            "gemini-status gemini-status-active"
+                                            if configured_gemini_key
+                                            else "gemini-status gemini-status-inactive"
+                                        ),
                                     ),
-                                    dcc.Checklist(
-                                        id="gemini-polish",
-                                        options=[{"label": "Pulir con Gemini", "value": "on"}],
-                                        value=["on"] if configured_gemini_key else [],
-                                        className="checklist",
+                                    html.Div(
+                                        "La clave se configura fuera de la interfaz.",
+                                        className="gemini-note",
                                     ),
                                 ],
                                 className="control-cell",
@@ -775,8 +775,6 @@ def create_app() -> Dash:
         Input("aggregation", "value"),
         Input("healthy-threshold", "value"),
         Input("slo-target", "value"),
-        Input("gemini-polish", "value"),
-        State("gemini-key", "value"),
     )
     def update_dashboard(
         start_date: str,
@@ -786,8 +784,6 @@ def create_app() -> Dash:
         aggregation: str,
         healthy_pct: int,
         slo_pct: int,
-        gemini_polish: list[str],
-        gemini_key: str,
     ):
         if not start_date or not end_date:
             raise PreventUpdate
@@ -827,8 +823,7 @@ def create_app() -> Dash:
             metric_cell("Recuperacion", format_compact(summary["recovery_velocity_per_min"]), "visible stores por minuto", "green"),
         ]
 
-        use_gemini = "on" in (gemini_polish or []) and bool(gemini_key)
-        briefing = build_ai_briefing(filtered, use_llm=use_gemini, gemini_api_key=gemini_key)
+        briefing = build_ai_briefing(filtered, use_llm=bool(_gemini_api_key()))
 
         return (
             make_hero(summary, filtered, healthy_pct, slo_pct),
@@ -851,8 +846,6 @@ def create_app() -> Dash:
         State("date-range", "end_date"),
         State("hour-start", "value"),
         State("hour-end", "value"),
-        State("gemini-polish", "value"),
-        State("gemini-key", "value"),
         prevent_initial_call=True,
     )
     def answer_chat(
@@ -862,15 +855,12 @@ def create_app() -> Dash:
         end_date: str,
         hour_start: int,
         hour_end: int,
-        gemini_polish: list[str],
-        gemini_key: str,
     ):
         if not n_clicks or not question or not question.strip():
             raise PreventUpdate
         hour_range = sorted([int(hour_start), int(hour_end)])
         filtered = filter_frame(data, start_date, end_date, hour_range)
-        use_gemini = "on" in (gemini_polish or []) and bool(gemini_key)
-        answer = answer_question(question, filtered, use_llm=use_gemini, gemini_api_key=gemini_key)
+        answer = answer_question(question, filtered, use_llm=bool(_gemini_api_key()))
         return html.Div(
             [
                 html.Div("Respuesta", className="answer-label"),
