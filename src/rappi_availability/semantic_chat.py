@@ -203,6 +203,22 @@ def _extract_gemini_text(payload: dict) -> str:
     return " ".join(texts).strip()
 
 
+def _gemini_output_is_complete(payload: dict, text: str) -> bool:
+    candidates = payload.get("candidates") or []
+    if not candidates:
+        return False
+
+    finish_reason = str(candidates[0].get("finishReason", "")).upper()
+    if finish_reason and finish_reason != "STOP":
+        return False
+
+    stripped = text.strip()
+    if not stripped:
+        return False
+
+    return stripped[-1] in ".!?"
+
+
 def _polish_with_gemini(
     question: str,
     answer: str,
@@ -226,7 +242,7 @@ def _polish_with_gemini(
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 180,
+                "maxOutputTokens": 320,
             },
         }
         request = Request(
@@ -242,6 +258,8 @@ def _polish_with_gemini(
             payload = json.loads(response.read().decode("utf-8"))
 
         polished = _extract_gemini_text(payload)
-        return polished or answer
+        if _gemini_output_is_complete(payload, polished):
+            return polished
+        return answer
     except Exception:
         return answer

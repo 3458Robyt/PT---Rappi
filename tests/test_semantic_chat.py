@@ -164,3 +164,41 @@ def test_answer_accepts_explicit_gemini_key_without_environment(monkeypatch):
 
     assert answer == "Pulido con clave temporal."
     assert captured["headers"]["X-goog-api-key"] == "temporary-key"
+
+
+def test_answer_falls_back_when_gemini_returns_incomplete_text(monkeypatch):
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [{"text": "El riesgo operativo es crítico:"}]
+                            },
+                            "finishReason": "MAX_TOKENS",
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        return FakeResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(semantic_chat, "urlopen", fake_urlopen, raising=False)
+
+    answer = semantic_chat.answer_question(
+        "Resume el riesgo operativo del rango seleccionado en lenguaje ejecutivo.",
+        sample_frame(),
+        use_llm=True,
+    )
+
+    assert answer.startswith("SLI operativo")
+    assert "MTTR" in answer
