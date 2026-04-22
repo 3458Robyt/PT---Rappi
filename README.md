@@ -139,7 +139,7 @@ http://127.0.0.1:8050
 La aplicación también está preparada para ejecutarse en Vercel como función Python/WSGI:
 
 ```txt
-https://rappi-availability-risk-tower.vercel.app
+https://pt-rappi.vercel.app/
 ```
 
 La entrada cloud está en `api/index.py`, que expone el servidor Flask interno de Dash. `vercel.json` enruta todo el tráfico hacia esa función para que Dash pueda servir callbacks, assets y rutas internas.
