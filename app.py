@@ -10,9 +10,16 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dash.exceptions import PreventUpdate
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - keeps the app runnable before dependencies are installed.
+    def load_dotenv() -> bool:
+        return False
+
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
+load_dotenv(ROOT / ".env")
 
 from rappi_availability.load_data import load_all_availability_data
 from rappi_availability.metrics import (
@@ -22,7 +29,7 @@ from rappi_availability.metrics import (
     resample_series,
 )
 from rappi_availability.risk_model import compute_risk_model
-from rappi_availability.semantic_chat import answer_question, build_ai_briefing
+from rappi_availability.semantic_chat import _gemini_api_key, answer_question, build_ai_briefing
 
 
 DATA_DIR = Path("Archivo (1)")
@@ -210,30 +217,79 @@ def make_timeline_figure(plot_frame: pd.DataFrame, incidents: pd.DataFrame, thre
 
 
 def make_budget_figure(summary: dict[str, object]) -> go.Figure:
-    remaining = float(summary["error_budget_remaining_pct"])
-    used = float(summary["error_budget_used_pct"])
-    bar_color = COLOR_GREEN if remaining >= 50 else COLOR_AMBER if remaining > 0 else COLOR_RED
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number",
-            value=remaining,
-            number={"suffix": "%", "font": {"color": COLOR_TEXT, "size": 34}},
-            title={"text": f"Budget restante<br><span style='font-size:12px;color:{COLOR_MUTED}'>usado {used:.1f}%</span>"},
-            gauge={
-                "axis": {"range": [0, 100], "tickcolor": COLOR_MUTED},
-                "bar": {"color": bar_color, "thickness": 0.32},
-                "bgcolor": "rgba(255,255,255,.05)",
-                "borderwidth": 1,
-                "bordercolor": COLOR_BORDER,
-                "steps": [
-                    {"range": [0, 20], "color": "rgba(255,93,108,.28)"},
-                    {"range": [20, 50], "color": "rgba(245,184,75,.22)"},
-                    {"range": [50, 100], "color": "rgba(21,214,123,.18)"},
-                ],
-            },
+    allowed = float(summary["allowed_low_minutes"])
+    consumed = float(summary["low_minutes"])
+    overrun = float(summary["budget_overrun_minutes"])
+    within_budget = min(consumed, allowed)
+    remaining_capacity = max(0.0, allowed - consumed)
+    axis_max = max(allowed, consumed, 1.0) * 1.08
+    min_readable_segment = axis_max * 0.16
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            y=["Budget"],
+            x=[within_budget],
+            orientation="h",
+            name="Consumo permitido",
+            marker={"color": COLOR_AMBER},
+            text=[f"{within_budget:.0f} min dentro" if within_budget >= min_readable_segment else ""],
+            textposition="inside",
+            hovertemplate="Consumo dentro del budget: %{x:,.1f} min<extra></extra>",
         )
     )
-    return chart_layout(fig, "Error budget operativo", 290)
+    fig.add_trace(
+        go.Bar(
+            y=["Budget"],
+            x=[remaining_capacity],
+            orientation="h",
+            name="Margen disponible",
+            marker={"color": COLOR_GREEN},
+            text=[f"{remaining_capacity:.0f} min libres" if remaining_capacity >= min_readable_segment else ""],
+            textposition="inside",
+            hovertemplate="Margen disponible: %{x:,.1f} min<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            y=["Budget"],
+            x=[overrun],
+            orientation="h",
+            name="Exceso sobre SLO",
+            marker={"color": COLOR_RED},
+            text=[f"+{overrun:.0f} min exceso" if overrun >= min_readable_segment else ""],
+            textposition="inside",
+            hovertemplate="Exceso: %{x:,.1f} min<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        barmode="stack",
+        shapes=[
+            {
+                "type": "line",
+                "xref": "x",
+                "yref": "paper",
+                "x0": allowed,
+                "x1": allowed,
+                "y0": 0.18,
+                "y1": 0.82,
+                "line": {"color": COLOR_GREEN, "width": 3, "dash": "dash"},
+            }
+        ],
+    )
+    title = (
+        "Error budget: consumo y exceso"
+        f"<br><span style='font-size:12px;color:{COLOR_MUTED}'>"
+        f"Permitido {format_minutes(allowed)} · consumido {format_minutes(consumed)} · "
+        f"burn {summary['budget_burn_rate']:.2f}x</span>"
+    )
+    fig = chart_layout(fig, title, 300)
+    fig.update_layout(
+        showlegend=False,
+        margin={"l": 28, "r": 18, "t": 76, "b": 42},
+    )
+    fig.update_xaxes(title="Minutos bajo umbral", range=[0, axis_max])
+    fig.update_yaxes(title="", showticklabels=False)
+    return fig
 
 
 def make_incident_rank_figure(incidents: pd.DataFrame) -> go.Figure:
@@ -368,6 +424,7 @@ def format_raw_table(frame: pd.DataFrame, rows: int = 40) -> list[dict[str, obje
 def make_hero(summary: dict[str, object], filtered: pd.DataFrame, healthy_pct: int, slo_pct: int) -> html.Div:
     start = filtered["timestamp"].min()
     end = filtered["timestamp"].max()
+    status_class = str(summary["status"]).lower().replace(" ", "-")
     return html.Div(
         [
             html.Div(
@@ -375,7 +432,7 @@ def make_hero(summary: dict[str, object], filtered: pd.DataFrame, healthy_pct: i
                     html.Div("Rappi Availability Risk Tower", className="product-mark"),
                     html.H1("Control de riesgo operativo"),
                     html.P(
-                        "SLI derivado de tiendas visibles: identifica episodios bajo umbral, consumo de error budget y recuperacion.",
+                        "Lee la disponibilidad de tiendas visibles como riesgo: ventanas saludables, incidentes y velocidad de recuperacion.",
                         className="hero-copy",
                     ),
                 ],
@@ -383,14 +440,51 @@ def make_hero(summary: dict[str, object], filtered: pd.DataFrame, healthy_pct: i
             ),
             html.Div(
                 [
-                    html.Div(summary["status"], className=f"status-pill status-{str(summary['status']).lower().replace(' ', '-')}"),
-                    html.Div(f"{timestamp_text(start)} - {timestamp_text(end)}", className="meta-line"),
-                    html.Div(f"Umbral {healthy_pct}% de mediana · SLO {slo_pct}%", className="meta-line"),
+                    html.Div("Estado del rango", className="status-label"),
+                    html.Div(summary["status"], className="status-value"),
+                    html.Div(f"{timestamp_text(start)} - {timestamp_text(end)}", className="status-meta"),
+                    html.Div(f"Saludable: {healthy_pct}% de la mediana · objetivo {slo_pct}%", className="status-meta"),
                 ],
-                className="hero-status",
+                className=f"hero-status-card status-{status_class}",
             ),
         ],
         className="mission-header",
+    )
+
+
+def reading_guide() -> html.Section:
+    items = [
+        (
+            "Disponibilidad saludable",
+            "Minutos donde las tiendas visibles están por encima del umbral calculado para el rango filtrado.",
+        ),
+        (
+            "Incidente",
+            "Bloque continuo de minutos por debajo del umbral. Sirve para separar una caída real de ruido puntual.",
+        ),
+        (
+            "Recuperación",
+            "Qué tan rápido vuelve a subir la visibilidad después de una ventana débil.",
+        ),
+    ]
+    return html.Section(
+        [
+            html.Div("Cómo leer esta torre", className="guide-title"),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(title, className="guide-item-title"),
+                            html.P(description, className="guide-item-copy"),
+                        ],
+                        className="guide-item",
+                    )
+                    for title, description in items
+                ],
+                className="guide-items",
+            ),
+        ],
+        className="reader-guide",
     )
 
 
@@ -401,6 +495,7 @@ def create_app() -> Dash:
     else:
         min_date = data["timestamp"].min().date()
         max_date = data["timestamp"].max().date()
+    configured_gemini_key = _gemini_api_key()
 
     app = Dash(__name__, title="Rappi Availability Risk Tower")
     app.layout = html.Div(
@@ -416,88 +511,137 @@ def create_app() -> Dash:
             ),
             html.Main(
                 [
-                    html.Aside(
+                    html.Nav(
                         [
-                            html.Div("Mission Controls", className="rail-title"),
-                            html.Label("Rango de fechas"),
-                            dcc.DatePickerRange(
-                                id="date-range",
-                                min_date_allowed=min_date,
-                                max_date_allowed=max_date,
-                                start_date=min_date,
-                                end_date=max_date,
-                                display_format="YYYY-MM-DD",
-                                className="date-picker",
-                            ),
-                            html.Label("Horas del dia"),
-                            dcc.RangeSlider(
-                                id="hour-range",
-                                min=0,
-                                max=23,
-                                value=[0, 23],
-                                marks={0: "00", 6: "06", 12: "12", 18: "18", 23: "23"},
-                                allowCross=False,
-                                tooltip={"placement": "bottom", "always_visible": False},
-                            ),
-                            html.Label("Granularidad visual"),
-                            dcc.Dropdown(
-                                id="aggregation",
-                                value="5min",
-                                clearable=False,
-                                options=[
-                                    {"label": "1 minuto", "value": "1min"},
-                                    {"label": "5 minutos", "value": "5min"},
-                                    {"label": "15 minutos", "value": "15min"},
-                                    {"label": "1 hora", "value": "1h"},
-                                    {"label": "Raw", "value": "raw"},
+                            html.Div("Rappi Availability Risk Tower", className="nav-brand"),
+                            html.Div(
+                                [
+                                    html.A("Runway", href="#runway", className="nav-link"),
+                                    html.A("Incidentes", href="#incident-rank-chart", className="nav-link"),
+                                    html.A("AI Analyst", href="#chat-question", className="nav-link"),
+                                    html.A("Auditoria", href="#tables", className="nav-link"),
                                 ],
-                            ),
-                            html.Label("Umbral saludable"),
-                            dcc.Slider(
-                                id="healthy-threshold",
-                                min=40,
-                                max=95,
-                                step=5,
-                                value=70,
-                                marks={40: "40%", 70: "70%", 95: "95%"},
-                            ),
-                            html.Label("Objetivo SLO"),
-                            dcc.Slider(
-                                id="slo-target",
-                                min=85,
-                                max=99,
-                                step=1,
-                                value=95,
-                                marks={85: "85%", 95: "95%", 99: "99%"},
-                            ),
-                            html.Div("Gemini", className="rail-title rail-title-secondary"),
-                            dcc.Input(
-                                id="gemini-key",
-                                type="password",
-                                placeholder="Gemini API key temporal",
-                                className="text-input",
-                                value=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "",
-                            ),
-                            dcc.Checklist(
-                                id="gemini-polish",
-                                options=[{"label": "Pulir briefing y chat con Gemini", "value": "on"}],
-                                value=[],
-                                className="checklist",
+                                className="nav-links",
                             ),
                         ],
-                        className="control-rail",
+                        className="deck-nav",
                     ),
                     html.Section(
                         [
-                            html.Div(id="hero-status"),
-                            html.Div(id="risk-metrics", className="risk-strip"),
                             html.Div(
                                 [
-                                    html.Div(
-                                        dcc.Graph(id="timeline-chart", config={"displayModeBar": False}),
-                                        id="runway",
-                                        className="runway-panel",
+                                    html.Label("Fechas"),
+                                    dcc.DatePickerRange(
+                                        id="date-range",
+                                        min_date_allowed=min_date,
+                                        max_date_allowed=max_date,
+                                        start_date=min_date,
+                                        end_date=max_date,
+                                        display_format="YYYY-MM-DD",
+                                        className="date-picker",
                                     ),
+                                ],
+                                className="control-cell control-date",
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("Horas"),
+                                    html.Div(
+                                        [
+                                            dcc.Dropdown(
+                                                id="hour-start",
+                                                value=0,
+                                                clearable=False,
+                                                options=[{"label": f"{hour:02d}:00", "value": hour} for hour in range(24)],
+                                            ),
+                                            dcc.Dropdown(
+                                                id="hour-end",
+                                                value=23,
+                                                clearable=False,
+                                                options=[{"label": f"{hour:02d}:00", "value": hour} for hour in range(24)],
+                                            ),
+                                        ],
+                                        className="control-pair",
+                                    ),
+                                ],
+                                className="control-cell",
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("Granularidad"),
+                                    dcc.Dropdown(
+                                        id="aggregation",
+                                        value="5min",
+                                        clearable=False,
+                                        options=[
+                                            {"label": "1 minuto", "value": "1min"},
+                                            {"label": "5 minutos", "value": "5min"},
+                                            {"label": "15 minutos", "value": "15min"},
+                                            {"label": "1 hora", "value": "1h"},
+                                            {"label": "Raw", "value": "raw"},
+                                        ],
+                                    ),
+                                ],
+                                className="control-cell",
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("Umbral saludable"),
+                                    dcc.Dropdown(
+                                        id="healthy-threshold",
+                                        value=70,
+                                        clearable=False,
+                                        options=[{"label": f"{value}%", "value": value} for value in range(40, 100, 5)],
+                                    ),
+                                ],
+                                className="control-cell",
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("SLO"),
+                                    dcc.Dropdown(
+                                        id="slo-target",
+                                        value=95,
+                                        clearable=False,
+                                        options=[{"label": f"{value}%", "value": value} for value in range(85, 100)],
+                                    ),
+                                ],
+                                className="control-cell",
+                            ),
+                            html.Div(
+                                [
+                                    html.Label("Gemini"),
+                                    dcc.Input(
+                                        id="gemini-key",
+                                        type="password",
+                                        placeholder="API key temporal",
+                                        className="text-input",
+                                        value=configured_gemini_key or "",
+                                    ),
+                                    dcc.Checklist(
+                                        id="gemini-polish",
+                                        options=[{"label": "Pulir con Gemini", "value": "on"}],
+                                        value=["on"] if configured_gemini_key else [],
+                                        className="checklist",
+                                    ),
+                                ],
+                                className="control-cell",
+                            ),
+                        ],
+                        className="control-band",
+                    ),
+                    html.Section(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id="hero-status", className="situation-copy"),
+                                    html.Div(id="risk-metrics", className="signal-grid"),
+                                ],
+                                className="situation-room",
+                            ),
+                            reading_guide(),
+                            html.Div(
+                                [
                                     html.Div(
                                         [
                                             dcc.Graph(id="budget-chart", config={"displayModeBar": False}),
@@ -505,8 +649,13 @@ def create_app() -> Dash:
                                         ],
                                         className="briefing-panel",
                                     ),
+                                    html.Div(
+                                        dcc.Graph(id="timeline-chart", config={"displayModeBar": False}),
+                                        id="runway",
+                                        className="runway-panel",
+                                    ),
                                 ],
-                                className="command-grid",
+                                className="runway-grid",
                             ),
                             html.Div(
                                 [
@@ -572,28 +721,38 @@ def create_app() -> Dash:
                                 id="tables",
                                 className="tables-grid",
                             ),
+                            html.Section(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div("AI Analyst", className="rail-title"),
+                                            html.P(
+                                                "Pregunta sobre SLO, incidentes, budget, MTTR, recuperacion o cualquier punto del rango filtrado.",
+                                                className="side-copy",
+                                            ),
+                                        ],
+                                        className="analyst-copy",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Textarea(
+                                                id="chat-question",
+                                                placeholder="Ej: ¿Cuál fue el peor incidente y cuánto budget consumió?",
+                                                className="question-box",
+                                            ),
+                                            html.Button("Preguntar", id="ask-button", className="primary-button", n_clicks=0),
+                                            html.Div(id="chat-answer", className="chat-answer"),
+                                        ],
+                                        className="analyst-console",
+                                    ),
+                                ],
+                                className="analyst-panel",
+                            ),
                         ],
                         className="main-workspace",
                     ),
-                    html.Aside(
-                        [
-                            html.Div("AI Analyst", className="rail-title"),
-                            html.P(
-                                "Pregunta sobre SLO, incidentes, budget, MTTR, recuperacion o cualquier punto del rango filtrado.",
-                                className="side-copy",
-                            ),
-                            dcc.Textarea(
-                                id="chat-question",
-                                placeholder="Ej: ¿Cuál fue el peor incidente y cuánto budget consumió?",
-                                className="question-box",
-                            ),
-                            html.Button("Preguntar", id="ask-button", className="primary-button", n_clicks=0),
-                            html.Div(id="chat-answer", className="chat-answer"),
-                        ],
-                        className="ai-rail",
-                    ),
                 ],
-                className="tower-shell",
+                className="war-room-shell",
             ),
         ]
     )
@@ -611,7 +770,8 @@ def create_app() -> Dash:
         Output("ai-briefing", "children"),
         Input("date-range", "start_date"),
         Input("date-range", "end_date"),
-        Input("hour-range", "value"),
+        Input("hour-start", "value"),
+        Input("hour-end", "value"),
         Input("aggregation", "value"),
         Input("healthy-threshold", "value"),
         Input("slo-target", "value"),
@@ -621,7 +781,8 @@ def create_app() -> Dash:
     def update_dashboard(
         start_date: str,
         end_date: str,
-        hour_range: list[int],
+        hour_start: int,
+        hour_end: int,
         aggregation: str,
         healthy_pct: int,
         slo_pct: int,
@@ -631,6 +792,7 @@ def create_app() -> Dash:
         if not start_date or not end_date:
             raise PreventUpdate
 
+        hour_range = sorted([int(hour_start), int(hour_end)])
         filtered = filter_frame(data, start_date, end_date, hour_range)
         if filtered.empty:
             empty_fig = chart_layout(go.Figure(), "Sin datos en el rango", 330)
@@ -657,10 +819,10 @@ def create_app() -> Dash:
             plot_frame = resample_series(filtered, aggregation)
 
         metrics = [
-            metric_cell("Operational SLI", format_pct(summary["operational_sli_pct"]), f"SLO objetivo {format_pct(summary['slo_target_pct'])}", "green"),
-            metric_cell("Error budget", format_pct(summary["error_budget_remaining_pct"]), f"burn {summary['budget_burn_rate']:.2f}x", "amber" if summary["error_budget_remaining_pct"] > 0 else "red"),
+            metric_cell("Minutos saludables", format_pct(summary["operational_sli_pct"]), f"objetivo {format_pct(summary['slo_target_pct'])}", "green"),
+            metric_cell("Consumo SLO", f"{summary['budget_burn_rate']:.2f}x", f"exceso {format_minutes(summary['budget_overrun_minutes'])}", "amber" if summary["error_budget_remaining_pct"] > 0 else "red"),
             metric_cell("Minutos bajo umbral", format_number(summary["low_minutes"]), f"umbral {format_compact(summary['threshold_value'])}", "red"),
-            metric_cell("Incidentes", format_number(summary["incident_count"]), f"MTTR {format_minutes(summary['mttr_minutes'])} · MTBF {format_minutes(summary['mtbf_minutes'])}", "blue"),
+            metric_cell("Incidentes", format_number(summary["incident_count"]), f"recupera {format_minutes(summary['mttr_minutes'])} · separacion {format_minutes(summary['mtbf_minutes'])}", "blue"),
             metric_cell("Estabilidad P10/P90", format_compact(summary["p10_p90_spread"]), f"P10 {format_compact(summary['p10_visible_stores'])} · P90 {format_compact(summary['p90_visible_stores'])}", "purple"),
             metric_cell("Recuperacion", format_compact(summary["recovery_velocity_per_min"]), "visible stores por minuto", "green"),
         ]
@@ -687,7 +849,8 @@ def create_app() -> Dash:
         State("chat-question", "value"),
         State("date-range", "start_date"),
         State("date-range", "end_date"),
-        State("hour-range", "value"),
+        State("hour-start", "value"),
+        State("hour-end", "value"),
         State("gemini-polish", "value"),
         State("gemini-key", "value"),
         prevent_initial_call=True,
@@ -697,12 +860,14 @@ def create_app() -> Dash:
         question: str,
         start_date: str,
         end_date: str,
-        hour_range: list[int],
+        hour_start: int,
+        hour_end: int,
         gemini_polish: list[str],
         gemini_key: str,
     ):
         if not n_clicks or not question or not question.strip():
             raise PreventUpdate
+        hour_range = sorted([int(hour_start), int(hour_end)])
         filtered = filter_frame(data, start_date, end_date, hour_range)
         use_gemini = "on" in (gemini_polish or []) and bool(gemini_key)
         answer = answer_question(question, filtered, use_llm=use_gemini, gemini_api_key=gemini_key)

@@ -68,6 +68,205 @@ a {
   padding: 18px;
 }
 
+.war-room-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+.deck-nav {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(21, 214, 123, 0.24);
+  background: rgba(7, 16, 12, 0.92);
+  border-radius: 8px;
+  padding: 0 18px;
+}
+
+.nav-brand {
+  color: var(--green);
+  font-family: "Fira Code", ui-monospace, monospace;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.nav-link:hover {
+  border-color: rgba(21, 214, 123, 0.62);
+}
+
+.control-band {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.1fr) minmax(220px, 1fr) minmax(180px, 0.7fr) minmax(210px, 1fr) minmax(190px, 0.9fr) minmax(220px, 0.9fr);
+  gap: 12px;
+  border: 1px solid var(--border);
+  background: rgba(13, 23, 18, 0.92);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.control-cell {
+  min-width: 0;
+  border-left: 2px solid rgba(21, 214, 123, 0.16);
+  padding-left: 12px;
+}
+
+.control-cell label {
+  margin: 0 0 8px;
+}
+
+.control-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.control-date .DateRangePicker {
+  width: 100%;
+}
+
+.control-date .DateRangePickerInput {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.situation-room {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+}
+
+.situation-copy .mission-header {
+  height: 100%;
+  min-height: 320px;
+  align-items: stretch;
+}
+
+.situation-copy h1 {
+  font-size: clamp(2rem, 3.3vw, 3.75rem);
+}
+
+.signal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.signal-grid .metric-cell {
+  min-height: 158px;
+  display: grid;
+  align-content: center;
+}
+
+.runway-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.runway-grid .briefing-panel {
+  order: 1;
+}
+
+.runway-grid .runway-panel {
+  order: 2;
+}
+
+.analyst-panel {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 18px;
+  margin-top: 18px;
+  border: 1px solid rgba(21, 214, 123, 0.24);
+  background: rgba(13, 23, 18, 0.92);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.analyst-copy {
+  align-self: start;
+}
+
+.analyst-console {
+  min-width: 0;
+}
+
+.reader-guide {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+  border: 1px solid rgba(21, 214, 123, 0.22);
+  background: rgba(10, 20, 15, 0.92);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.guide-title {
+  color: var(--green);
+  font-family: "Fira Code", ui-monospace, monospace;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.guide-items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.guide-item {
+  min-width: 0;
+  border-left: 2px solid rgba(21, 214, 123, 0.28);
+  padding-left: 12px;
+}
+
+.guide-item-title {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.guide-item-copy {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .control-rail,
 .ai-rail {
   position: sticky;
@@ -213,6 +412,49 @@ body .rc-slider-mark span {
   opacity: 1 !important;
 }
 
+body .rc-tooltip,
+body .rc-slider-tooltip,
+body .rc-slider-tooltip-content,
+body .rc-tooltip-content {
+  opacity: 1 !important;
+}
+
+body .rc-tooltip-inner,
+body .rc-slider-tooltip-inner,
+.rc-slider-tooltip-inner {
+  min-width: 44px !important;
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(21, 214, 123, 0.58) !important;
+  background: #09130f !important;
+  color: var(--text) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+  font-family: "Fira Code", ui-monospace, monospace !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+}
+
+body .rc-tooltip-arrow,
+body .rc-slider-tooltip-arrow,
+.rc-slider-tooltip-arrow {
+  border-top-color: rgba(21, 214, 123, 0.58) !important;
+}
+
+.control-band .rc-tooltip,
+.control-band .rc-slider-tooltip,
+.control-band [role="tooltip"],
+.control-band [class*="tooltip"],
+.control-band [class*="Tooltip"] {
+  display: none !important;
+}
+
+.rc-slider-handle:focus,
+.rc-slider-handle-dragging {
+  box-shadow: 0 0 0 5px rgba(21, 214, 123, 0.26) !important;
+}
+
 .text-input,
 .question-box {
   width: 100%;
@@ -325,6 +567,37 @@ h2 {
   justify-items: end;
 }
 
+.hero-status-card {
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  background: rgba(7, 16, 12, 0.78);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.status-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-value {
+  color: var(--text);
+  font-family: "Fira Code", ui-monospace, monospace;
+  font-size: clamp(1.15rem, 1.5vw, 1.7rem);
+  font-weight: 800;
+}
+
+.status-meta {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -339,16 +612,19 @@ h2 {
 .status-dentro-de-slo {
   border-color: rgba(21, 214, 123, 0.65);
   background: rgba(21, 214, 123, 0.13);
+  border-left: 4px solid var(--green);
 }
 
 .status-en-riesgo {
   border-color: rgba(245, 184, 75, 0.68);
   background: rgba(245, 184, 75, 0.14);
+  border-left: 4px solid var(--amber);
 }
 
 .status-budget-agotado {
   border-color: rgba(255, 93, 108, 0.72);
   background: rgba(255, 93, 108, 0.14);
+  border-left: 4px solid var(--red);
 }
 
 .meta-line {
@@ -513,6 +789,41 @@ h2 {
   text-transform: uppercase;
 }
 
+@media (max-width: 1420px) {
+  .control-band {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .situation-room {
+    grid-template-columns: minmax(360px, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .runway-grid {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  .situation-room,
+  .runway-grid,
+  .reader-guide,
+  .analyst-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .situation-copy .mission-header {
+    min-height: 260px;
+  }
+
+  .signal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guide-items {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1320px) {
   .tower-shell {
     grid-template-columns: 270px minmax(0, 1fr);
@@ -530,6 +841,29 @@ h2 {
 }
 
 @media (max-width: 980px) {
+  .war-room-shell {
+    padding: 12px;
+  }
+
+  .deck-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px;
+  }
+
+  .nav-links {
+    width: 100%;
+  }
+
+  .nav-link {
+    flex: 1 1 45%;
+    justify-content: center;
+  }
+
+  .control-band {
+    grid-template-columns: 1fr;
+  }
+
   .tower-shell {
     grid-template-columns: 1fr;
     padding: 12px;
@@ -570,6 +904,51 @@ h2 {
 }
 
 @media (max-width: 620px) {
+  .war-room-shell {
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .deck-nav,
+  .control-band,
+  .analyst-panel {
+    border-radius: 6px;
+  }
+
+  .nav-brand {
+    font-size: 0.8rem;
+  }
+
+  .nav-link {
+    flex-basis: 100%;
+  }
+
+  .control-cell {
+    border-left: 0;
+    border-top: 2px solid rgba(21, 214, 123, 0.16);
+    padding: 12px 0 0;
+  }
+
+  .situation-copy .mission-header {
+    min-height: auto;
+  }
+
+  .hero-status-card {
+    padding: 14px;
+  }
+
+  .situation-copy h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .reader-guide {
+    padding: 14px;
+  }
+
+  .signal-grid {
+    grid-template-columns: 1fr;
+  }
+
   .risk-strip {
     grid-template-columns: 1fr;
   }

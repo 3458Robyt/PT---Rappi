@@ -39,6 +39,8 @@ def _empty_result() -> dict[str, object]:
             "low_minutes": 0,
             "operational_sli_pct": 0.0,
             "allowed_low_minutes": 0.0,
+            "budget_overrun_minutes": 0.0,
+            "budget_overrun_pct": 0.0,
             "error_budget_used_pct": 0.0,
             "error_budget_remaining_pct": 0.0,
             "budget_burn_rate": 0.0,
@@ -143,6 +145,12 @@ def compute_risk_model(
     low_minutes = total_minutes - healthy_minutes
     operational_sli_pct = healthy_minutes / total_minutes * 100 if total_minutes else 0.0
     allowed_low_minutes = total_minutes * max(0.0, 1 - slo_target)
+    budget_overrun_minutes = max(0.0, low_minutes - allowed_low_minutes)
+    budget_overrun_pct = (
+        budget_overrun_minutes / allowed_low_minutes * 100
+        if allowed_low_minutes
+        else 0.0
+    )
     budget_burn_rate = low_minutes / allowed_low_minutes if allowed_low_minutes else 0.0
     error_budget_used_pct = budget_burn_rate * 100 if allowed_low_minutes else 0.0
     error_budget_remaining_pct = max(0.0, 100 - error_budget_used_pct)
@@ -196,6 +204,8 @@ def compute_risk_model(
             "low_minutes": low_minutes,
             "operational_sli_pct": _round(operational_sli_pct),
             "allowed_low_minutes": _round(allowed_low_minutes),
+            "budget_overrun_minutes": _round(budget_overrun_minutes),
+            "budget_overrun_pct": _round(budget_overrun_pct),
             "error_budget_used_pct": _round(error_budget_used_pct),
             "error_budget_remaining_pct": _round(error_budget_remaining_pct),
             "budget_burn_rate": _round(budget_burn_rate),

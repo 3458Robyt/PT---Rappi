@@ -177,9 +177,12 @@ def build_ai_briefing(
 
 
 def _gemini_api_key(api_key: str | None = None) -> str | None:
-    if api_key:
-        return api_key
-    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    placeholders = {"replace_me", "pega_tu_api_key_aqui", "tu_clave", "your_api_key_here"}
+    for candidate in [api_key, os.getenv("GEMINI_API_KEY"), os.getenv("GOOGLE_API_KEY")]:
+        cleaned = str(candidate or "").strip()
+        if cleaned and cleaned not in placeholders:
+            return cleaned
+    return None
 
 
 def _build_gemini_prompt(question: str, answer: str) -> str:

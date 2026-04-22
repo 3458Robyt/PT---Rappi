@@ -33,6 +33,8 @@ def test_compute_risk_model_calculates_sli_and_error_budget():
     assert result["summary"]["low_minutes"] == 3
     assert result["summary"]["operational_sli_pct"] == 62.5
     assert result["summary"]["allowed_low_minutes"] == 0.4
+    assert result["summary"]["budget_overrun_minutes"] == 2.6
+    assert result["summary"]["budget_overrun_pct"] == 650.0
     assert result["summary"]["error_budget_used_pct"] == 750.0
     assert result["summary"]["error_budget_remaining_pct"] == 0.0
     assert result["summary"]["budget_burn_rate"] == 7.5

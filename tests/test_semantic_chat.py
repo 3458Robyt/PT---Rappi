@@ -75,6 +75,13 @@ def test_build_ai_briefing_works_without_gemini_key():
     assert "umbral saludable" in briefing
 
 
+def test_gemini_api_key_ignores_documentation_placeholder(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "replace_me")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
+    assert semantic_chat._gemini_api_key() is None
+
+
 def test_answer_uses_gemini_to_polish_when_enabled(monkeypatch):
     captured = {}
 
