@@ -134,6 +134,18 @@ Abrir:
 http://127.0.0.1:8050
 ```
 
+## Despliegue en Vercel
+
+La aplicación también está preparada para ejecutarse en Vercel como función Python/WSGI:
+
+```txt
+https://rappi-availability-risk-tower.vercel.app
+```
+
+La entrada cloud está en `api/index.py`, que expone el servidor Flask interno de Dash. `vercel.json` enruta todo el tráfico hacia esa función para que Dash pueda servir callbacks, assets y rutas internas.
+
+Para habilitar Gemini en Vercel, configurar `GEMINI_API_KEY` como variable de entorno del proyecto en Vercel. La clave no debe ir en el repositorio.
+
 ## Reconstruir el Dataset
 
 No es necesario para la demo, porque `data/processed/availability_long.csv` ya está versionado. Si se quiere reconstruir:
@@ -163,6 +175,7 @@ Resume el riesgo operativo del rango.
 
 ```txt
 app.py                                  # App Dash principal
+api/index.py                            # Entrada WSGI para Vercel
 assets/risk_tower.css                   # Sistema visual
 data/processed/availability_long.csv    # Dataset procesado para demo
 scripts/build_dataset.py                # Normalización de CSV originales
@@ -172,6 +185,7 @@ src/rappi_availability/risk_model.py    # SLO, incidentes y error budget
 src/rappi_availability/semantic_chat.py # Chat y Gemini
 tests/                                  # Pruebas unitarias
 docs/assets/                            # Capturas del README
+vercel.json                             # Configuración de despliegue
 ```
 
 ## Limitaciones

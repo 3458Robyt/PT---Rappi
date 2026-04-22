@@ -497,7 +497,7 @@ def create_app() -> Dash:
         max_date = data["timestamp"].max().date()
     configured_gemini_key = _gemini_api_key()
 
-    app = Dash(__name__, title="Rappi Availability Risk Tower")
+    app = Dash(__name__, title="Rappi Availability Risk Tower", assets_folder=str(ROOT / "assets"))
     app.layout = html.Div(
         [
             dcc.Store(id="boot-marker", data="risk-tower"),
