@@ -4,6 +4,46 @@ Aplicación local para la prueba técnica **AI Interns 2026 de Rappi**. Conviert
 
 ![Vista desktop](docs/assets/risk-tower-desktop.png)
 
+## Uso de IA y Equipo de Agentes
+
+Este proyecto fue construido con un flujo de desarrollo asistido por IA. La idea no fue usar IA solo como “chatbot”, sino como parte del proceso completo de diseño, análisis, implementación, pruebas, documentación y despliegue.
+
+### Herramientas de IA usadas
+
+- **Codex**: se usó como agente principal de desarrollo. Su rol fue leer el brief, analizar el código, proponer arquitectura, implementar cambios, depurar errores, escribir pruebas, preparar documentación y coordinar el despliegue.
+- **Equipo de agentes especializados**: el desarrollo se trabajó como una orquestación de agentes con responsabilidades distintas: planificación, UI/UX, análisis de datos, debugging sistemático, testing, documentación, GitHub y Vercel. Esto permitió avanzar como si existiera un pequeño equipo de software trabajando en paralelo bajo una misma dirección técnica.
+- **Gemini Flash**: se integró dentro de la aplicación para redactar el briefing ejecutivo y responder preguntas en lenguaje natural sobre el rango filtrado.
+- **Herramientas de GitHub y Vercel asistidas por IA**: se usaron para preparar el repositorio, revisar el estado de deployments, configurar variables de entorno y publicar la demo.
+
+### Cómo se usaron
+
+Codex fue usado como copiloto técnico y orquestador. Primero ayudó a entender el documento de la prueba y convertirlo en un plan de desarrollo. Después apoyó la transformación de una aplicación tipo dashboard a una experiencia más diferenciada: una torre de control de riesgo operativo.
+
+Los agentes especializados se usaron para dividir el trabajo en frentes concretos:
+
+- **Análisis del problema**: traducir datos de disponibilidad en métricas operativas defendibles.
+- **Diseño de interfaz**: rediseñar la experiencia visual para que no pareciera un dashboard genérico.
+- **Ingeniería de datos**: estructurar el dataset procesado y calcular KPIs reproducibles.
+- **Calidad**: crear pruebas unitarias para métricas, incidentes, SLO, chat y despliegue.
+- **Documentación**: convertir el README en una pieza de evaluación, no solo en instrucciones de instalación.
+- **Deploy**: publicar la aplicación en Vercel y conectar el deployment con GitHub.
+
+Gemini se usó de forma controlada dentro del producto. La app primero calcula las métricas localmente con Pandas y después Gemini solo mejora la redacción. Esto evita que el modelo invente cifras, fechas o conclusiones que no estén respaldadas por los datos.
+
+### Por qué se tomaron estas decisiones
+
+Se eligió este enfoque porque el reto evalúa tanto la solución técnica como el criterio para usar IA. Por eso, la IA no reemplaza los cálculos críticos: los indicadores de riesgo, incidentes, SLO, error budget y recuperación son determinísticos y auditables.
+
+La IA se usa donde aporta más valor:
+
+- acelerar exploración, diseño e implementación;
+- mejorar claridad visual y narrativa;
+- redactar explicaciones ejecutivas;
+- asistir el proceso de pruebas, documentación y despliegue;
+- facilitar preguntas en lenguaje natural sin perder trazabilidad.
+
+La decisión principal fue mantener una separación clara: **Pandas calcula, Plotly visualiza, Dash interactúa y Gemini comunica**. Codex y los agentes apoyan el proceso de construcción, pero la aplicación final sigue siendo verificable por código, pruebas y datos.
+
 ## Resumen Ejecutivo
 
 Un dashboard común responde “cuántas tiendas estaban visibles”. Esta aplicación responde preguntas operativas más útiles:
@@ -23,6 +63,7 @@ La idea central es: **no solo mostrar disponibilidad, sino explicar riesgo, cons
 - **Dash 4.1.0**: interfaz web interactiva con callbacks.
 - **Pandas 2.2.3**: limpieza, resampling y métricas.
 - **Plotly 5.24.1**: gráficos interactivos.
+- **Codex y agentes de IA**: soporte al proceso de análisis, diseño, implementación, pruebas, documentación y despliegue.
 - **Gemini Flash**: redacción opcional del briefing y chat, siempre basada en métricas locales.
 - **Pytest**: pruebas unitarias del procesamiento, riesgo, chat y layout.
 
@@ -204,4 +245,5 @@ El evaluador puede clonar el repositorio, instalar dependencias, configurar Gemi
 2. Qué métricas se calculan.
 3. Qué representa cada gráfico.
 4. Por qué la app se enfoca en riesgo operativo.
-5. Cómo verificar que la solución funciona.
+5. Qué herramientas de IA se usaron, cómo se usaron y por qué se tomaron esas decisiones.
+6. Cómo verificar que la solución funciona.
